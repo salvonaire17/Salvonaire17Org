@@ -1,0 +1,86 @@
+/**
+ * Import function triggers from their respective submodules:
+ *
+ * const {onCall} = require("firebase-functions/v2/https");
+ * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
+ *
+ * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ */
+
+const { onValueCreated } = require("firebase-functions/v2/database");
+const admin = require("firebase-admin");
+const nodemailer = require("nodemailer");
+
+admin.initializeApp();
+
+// Configure the email transport using the default SMTP transport and a Gmail account.
+// Note: To use a Gmail account, you must generate an "App Password".
+// See instructions in the summary for generating the App Password.
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'YOUR_FREE_GMAIL@gmail.com',
+    pass: 'YOUR_GMAIL_APP_PASSWORD' // Replace with your generated App Password
+  }
+});
+
+exports.sendAnnouncementEmails = onValueCreated("/announcements/{announcementId}", async (event) => {
+  const announcementData = event.data.val();
+  if (!announcementData) {
+    return null;
+  }
+
+  try {
+    // Fetch recipient emails from the /users node
+    // Assuming users are stored in Realtime Database at /users
+    // (If your users are in Firestore instead, you would use admin.firestore().collection('users').get())
+    const usersSnapshot = await admin.database().ref("/users").once("value");
+    const users = usersSnapshot.val();
+    
+    if (!users) {
+      console.log("No users found to send emails to.");
+      return null;
+    }
+
+    // Extract valid emails from the users object
+    const bccEmails = [];
+    Object.values(users).forEach(user => {
+      if (user.email) {
+        bccEmails.push(user.email);
+      }
+    });
+
+    if (bccEmails.length === 0) {
+      console.log("No user emails available.");
+      return null;
+    }
+
+    // Configure the email options
+    const mailOptions = {
+      from: '"College App Notifications" <YOUR_FREE_GMAIL@gmail.com>',
+      bcc: bccEmails.join(','), // Send as BCC for privacy
+      subject: `New Announcement: ${announcementData.title || "College Notification"}`,
+      text: `${announcementData.content}\n\nPosted by: ${announcementData.author || "Admin"}\nDate: ${new Date(announcementData.date || Date.now()).toLocaleDateString()}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+          <h2>${announcementData.title || "New Announcement"}</h2>
+          <p>${announcementData.content}</p>
+          <br />
+          <p style="font-size: 12px; color: #888;">
+            Posted by: ${announcementData.author || "Admin"}<br />
+            Date: ${new Date(announcementData.date || Date.now()).toLocaleDateString()}
+          </p>
+        </div>
+      `
+    };
+
+    // Send the email
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Announcement emails sent successfully! Message ID:", info.messageId);
+
+  } catch (error) {
+    console.error("Error sending announcement emails:", error);
+  }
+
+  return null;
+});

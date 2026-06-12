@@ -1,0 +1,6 @@
+{
+  "name": "MBEYA COLLEGE OF HEALTH AND ALLIED SCIENCES",
+  "description": "A comprehensive, role-based management system for MBEYA COLLEGE OF HEALTH AND ALLIED SCIENCES. Features tailored modules for students, faculty, and administration, including admissions, bursary, hostel management, and attendance tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

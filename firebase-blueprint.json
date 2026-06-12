@@ -1,0 +1,240 @@
+{
+  "entities": {
+    "AdmittedStudent": {
+      "title": "AdmittedStudent",
+      "description": "Master list of students admitted to the college, used for registration validation.",
+      "type": "object",
+      "properties": {
+        "indexNumber": { "type": "string" },
+        "name": { "type": "string" },
+        "courseId": { "type": "string" },
+        "batch": { "type": "string" }
+      },
+      "required": ["indexNumber", "name", "courseId"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile containing roles and identification.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["Student", "Bursar", "Warden", "Admin", "Admission Officer", "HOD", "Lecturer", "Principal", "Vice Principal", "Academic Officer", "System Administrator", "Secretary", "Parent"] },
+        "nactvetRegNo": { "type": "string" },
+        "admissionNumber": { "type": "string" },
+        "reportingStatus": { "type": "string", "enum": ["Pending", "Verified", "Approved", "Rejected"] },
+        "reportingDate": { "type": "string" },
+        "uploadedDocuments": { "type": "array" },
+        "parentDetails": { "type": "object" },
+        "phone": { "type": "string" },
+        "avatar": { "type": "string" },
+        "courseId": { "type": "string" },
+        "level": { "type": "number" },
+        "linkedStudentId": { "type": "string" },
+        "balanceDue": { "type": "number" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Grade": {
+      "title": "Grade",
+      "description": "Student academic performance record for a module.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "moduleId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "semester": { "type": "string", "enum": ["SM1", "SM2"] },
+        "caScore": { "type": "number" },
+        "seScore": { "type": "number" },
+        "totalScore": { "type": "number" },
+        "grade": { "type": "string" },
+        "points": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "pending_verification", "published"] },
+        "isLocked": { "type": "boolean" },
+        "submittedBy": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "verifiedBy": { "type": "string" },
+        "verifiedAt": { "type": "string" },
+        "publishedAt": { "type": "string" }
+      },
+      "required": ["studentId", "moduleId", "caScore", "seScore", "status"]
+    },
+    "SemesterResult": {
+      "title": "SemesterResult",
+      "description": "Aggregated semester performance and outcome.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "semester": { "type": "string", "enum": ["SM1", "SM2"] },
+        "academicYear": { "type": "string" },
+        "gpa": { "type": "number" },
+        "totalCredits": { "type": "number" },
+        "status": { "type": "string", "enum": ["PASS", "SUPPLEMENTARY", "RETAKE", "DISCONTINUED"] },
+        "publishedAt": { "type": "string" }
+      },
+      "required": ["studentId", "semester", "academicYear", "gpa", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable records of sensitive system changes especially academic data.",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string" },
+        "performedBy": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "previousValue": { "type": "object" },
+        "newValue": { "type": "object" }
+      },
+      "required": ["action", "targetId", "performedBy", "timestamp"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment records for students.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "controlNumber": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paid"] },
+        "receiptUrl": { "type": "string" },
+        "type": { "type": "string", "enum": ["tuition", "hostel"] }
+      },
+      "required": ["userId", "controlNumber", "type", "status"]
+    },
+    "Room": {
+      "title": "Room",
+      "description": "Hostel room details with assigned user if any.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "building": { "type": "string" },
+        "capacity": { "type": "number" }
+      },
+      "required": ["roomNumber", "building", "capacity"]
+    },
+    "RegistrationWorkflow": {
+      "title": "RegistrationWorkflow",
+      "description": "Student progress through the college registration workflow",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "indexNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["Profile_Created", "Payment_Cleared", "Documents_Approved", "Registered"] },
+        "residence": { "type": "string", "enum": ["inHostel", "offCampus"] },
+        "currentStep": { "type": "number" },
+        "feeControlNumber": { "type": "string" },
+        "paymentReference": { "type": "string" },
+        "uploadedDocuments": { "type": "array" },
+        "rejectionReason": { "type": "string" }
+      },
+      "required": ["userId", "currentStep", "status"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Logs actions taken by users (e.g. Admin Officers).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "action": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetName": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["userId", "action", "timestamp"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications for users.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+        "read": { "type": "boolean" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "timestamp"]
+    },
+    "Complaint": {
+      "title": "Complaint",
+      "description": "Anonymized campus feedback and complaints",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["text", "createdAt"]
+    },
+    "FeeStructure": {
+      "title": "FeeStructure",
+      "description": "Tuition and relevant fee amounts for specific courses, managed by the Bursar.",
+      "type": "object",
+      "properties": {
+        "courseId": { "type": "string" },
+        "courseName": { "type": "string" },
+        "tuitionAmount": { "type": "number" },
+        "hostelAmount": { "type": "number" },
+        "description": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["courseId", "tuitionAmount"]
+    }
+  },
+  "firestore": {
+    "/feeStructures/{id}": {
+      "schema": { "$ref": "#/entities/FeeStructure" },
+      "description": "Master list of fee amounts by course."
+    },
+    "/Students/{id}": {
+      "schema": { "$ref": "#/entities/AdmittedStudent" },
+      "description": "Master list of admitted students for index validation."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles."
+    },
+    "/complaints/{complaintId}": {
+      "schema": { "$ref": "#/entities/Complaint" },
+      "description": "Global complaints container"
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Stores payment records."
+    },
+    "/rooms/{roomId}": {
+      "schema": { "$ref": "#/entities/Room" },
+      "description": "Stores room configurations and assignments."
+    },
+    "/registrationWorkflows/{workflowId}": {
+      "schema": { "$ref": "#/entities/RegistrationWorkflow" },
+      "description": "Stores workflow steps for students."
+    },
+    "/logs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Stores activity logs."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Stores notifications for users."
+    },
+    "/grades/{gradeId}": {
+      "schema": { "$ref": "#/entities/Grade" },
+      "description": "Stores academic grades."
+    },
+    "/semester_results/{resultId}": {
+      "schema": { "$ref": "#/entities/SemesterResult" },
+      "description": "Stores aggregated semester outcomes."
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Stores audit trails for academic data."
+    }
+  }
+}

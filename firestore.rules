@@ -1,0 +1,169 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isRole(role) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    match /users/{userId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        isRole("Admin") || isRole("Principal") || isRole("Vice Principal") || isRole("Admission Officer") || isRole("Admission") || isRole("Bursar") || isRole("Warden") || isRole("HOD") || isRole("Secretary") || isRole("Academic Officer") || isRole("System Administrator")
+      );
+    }
+
+    
+    match /grades/{gradeId} {
+      allow list: if isAuthenticated(); // Security is handled by client-side filtering via security-rule friendly queries where possible
+      allow get: if isAuthenticated() && (isOwner(resource.data.studentId) || isRole("HOD") || isRole("Lecturer") || isRole("Admin") || isRole("Principal") || isRole("Vice Principal") || isRole("Academic Officer") || isRole("Parent"));
+      allow create: if isAuthenticated() && (isRole("Admin") || isRole("Principal") || isRole("Vice Principal") || isRole("HOD") || isRole("Lecturer"));
+      allow update: if isAuthenticated() && (isRole("Admin") || isRole("Principal") || isRole("Vice Principal") || isRole("HOD") || isRole("Lecturer") || isRole("Academic Officer"));
+    }
+
+    match /reportingLogs/{logId} {
+      allow get: if isAuthenticated() && (isRole("Admin") || isRole("Admission Officer") || isRole("Academic Officer"));
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow delete: if isAuthenticated() && (isRole("Admin") || isRole("Admission Officer") || isRole("Principal") || isRole("Vice Principal"));
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated();
+      allow write: if isRole("Bursar") || isRole("Admin");
+    }
+
+    match /rooms/{roomId} {
+      allow read: if isAuthenticated();
+      allow write: if isRole("Admin") || isRole("Warden");
+    }
+
+    match /registrations/{registrationId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /results/{batchId} {
+      allow read: if isAuthenticated();
+      allow write: if isRole("HOD") || isRole("Admin");
+
+      match /studentGrades/{studentId} {
+        allow read: if isAuthenticated();
+        allow write: if isRole("HOD") || isRole("Admin");
+      }
+    }
+
+    match /{path=**}/studentGrades/{studentId} {
+      allow read: if isAuthenticated();
+    }
+
+    match /media/{mediaId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /feeStructures/{feeId} {
+      allow read: if isAuthenticated();
+      allow write: if isRole("Bursar") || isRole("Admin");
+    }
+
+    match /semester_results/{resultId} {
+      allow get: if isAuthenticated() && (isOwner(resource.data.studentId) || isRole("Admin") || isRole("Principal") || isRole("Vice Principal") || isRole("Academic Officer") || isRole("HOD") || isRole("Parent"));
+      allow list: if isAuthenticated();
+      allow write: if isAuthenticated() && (isRole("Admin") || isRole("Principal") || isRole("Vice Principal") || isRole("Academic Officer"));
+    }
+
+    match /audit_logs/{logId} {
+      allow get: if isAuthenticated() && (isRole("System Administrator") || isRole("Admin"));
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+
+    match /courses/{courseId} {
+      allow read: if isAuthenticated();
+      allow write: if isRole("Admin");
+    }
+
+    match /departments/{departmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isRole("Admin");
+    }
+
+    match /hostels/{hostelId} {
+      allow read: if isAuthenticated();
+      allow write: if isRole("Warden") || isRole("Admin");
+    }
+
+    match /master_students/{studentId} {
+      allow read: if true; // Allow students to verify admission status before account creation
+      allow write: if isAuthenticated() && (isRole("Admission Officer") || isRole("Admin") || isRole("Academic Officer"));
+    }
+
+    match /Students/{studentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isRole("Admission Officer") || isRole("Admin") || isRole("Academic Officer"));
+    }
+
+    match /admissionUploads/{uploadId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isRole("Admission Officer") || isRole("Admin"));
+    }
+
+    match /notifications/{notifId} {
+      allow get: if isAuthenticated() && (isOwner(resource.data.userId) || isRole("Admin") || isRole("Academic Officer"));
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated(); // Anyone can create a notification for someone
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read"]);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (isRole("Admin") || isRole("Principal") || isRole("Vice Principal") || isRole("HOD") || isRole("Secretary") || isRole("Lecturer") || isRole("Admission Officer"));
+      allow update: if isAuthenticated() && (isRole("Admin") || isOwner(resource.data.authorId) || isRole("Principal") || isRole("Vice Principal") || isRole("HOD"));
+      allow delete: if isAuthenticated() && (isRole("Admin") || isOwner(resource.data.authorId) || isRole("Principal") || isRole("Vice Principal") || isRole("HOD"));
+    }
+
+    match /complaints/{complaintId} {
+      allow get: if isRole("Principal") || isRole("Vice Principal") || isRole("Admin") || isRole("HOD") || isRole("Admission Officer") || isRole("Academic Officer");
+      allow list: if isAuthenticated();
+      allow update, delete: if isRole("Principal") || isRole("Vice Principal") || isRole("Admin") || isRole("HOD") || isRole("Admission Officer") || isRole("Academic Officer");
+      allow create: if isAuthenticated();
+    }
+  }
+}
